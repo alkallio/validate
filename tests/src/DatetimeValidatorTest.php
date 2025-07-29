@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class DatetimeValidatorTest extends TestCase
@@ -21,37 +22,41 @@ class DatetimeValidatorTest extends TestCase
         $this->object = new DatetimeValidator();
     }
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input, expected
         return [
-            ['2000-10-12 12:00:00'],
-            ['2000-10-12 12:56:00']
+            'valid datetime 1' => ['2000-10-12 12:00:00'],
+            'valid datetime 2' => ['2000-10-12 12:56:00']
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            ['10-10-2014'],
-            ['20'],
-            ['10-13-2014'],
-            ['2014-13-10'],
-            ['2014-13-33'],
-            ['2000-10-12 12:60:00'],
-            ['2000-10-12 12:56:60'],
-            ['2000-10-12 25:56:00'],
-            ['2000-10-12 23:56'],
-            ['2000-10-12'],
-            ['2000-10-12 23']
+            'wrong format d-m-Y' => ['10-10-2014'],
+            'just a number' => ['20'],
+            'invalid month' => ['10-13-2014'],
+            'invalid month Y-m-d' => ['2014-13-10'],
+            'invalid day' => ['2014-13-33'],
+            'invalid minute' => ['2000-10-12 12:60:00'],
+            'invalid second' => ['2000-10-12 12:56:60'],
+            'invalid hour' => ['2000-10-12 25:56:00'],
+            'missing seconds' => ['2000-10-12 23:56'],
+            'date only' => ['2000-10-12'],
+            'missing minutes and seconds' => ['2000-10-12 23']
         ];
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input)
+    public function testConstruct(): void
+    {
+        $validator = new DatetimeValidator();
+        $this->assertInstanceOf(DatetimeValidator::class, $validator);
+    }
+
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(string $input): void
     {
         $return = $this->object->validate($input);
 
@@ -59,20 +64,21 @@ class DatetimeValidatorTest extends TestCase
         $this->assertTrue($return->status);
     }
 
-    public function testFormatMinimumSuccess()
+    public function testFormatMinimumSuccess(): void
     {
         $validator = new DatetimeValidator(
             '2000-10-12 12:00:00'
         );
 
-        $validator->parse('2000-10-12 12:00:01');
+        $this->assertSame(
+            '2000-10-12 12:00:01',
+            $validator->parse('2000-10-12 12:00:01')
+        );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testFormatMinimumFailure()
+    public function testFormatMinimumFailure(): void
     {
+        $this->expectException(\Exception::class);
         $validator = new DatetimeValidator(
             '2000-10-12 12:00:00'
         );
@@ -80,21 +86,22 @@ class DatetimeValidatorTest extends TestCase
         $validator->parse('2000-10-11 12:00:00');
     }
 
-    public function testFormatMinimumMaximumSuccess()
+    public function testFormatMinimumMaximumSuccess(): void
     {
         $validator = new DatetimeValidator(
             '2000-10-12 12:00:00',
             '2000-10-12 12:01:00'
         );
 
-        $validator->parse('2000-10-12 12:00:01');
+        $this->assertSame(
+            '2000-10-12 12:00:01',
+            $validator->parse('2000-10-12 12:00:01')
+        );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testFormatMaximumFailure()
+    public function testFormatMaximumFailure(): void
     {
+        $this->expectException(\Exception::class); // Changed
         $validator = new DatetimeValidator(
             null,
             '2000-10-12 12:00:00'
@@ -103,18 +110,15 @@ class DatetimeValidatorTest extends TestCase
         $validator->parse('2000-11-12 12:00:00');
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(string $input): void
     {
         $return = $this->object->validate($input);
 
-        $this->assertEquals(false, $return->status);
+        $this->assertFalse($return->status);
     }
 
-
-    public function testCreateFromJSON()
+    public function testCreateFromJSON(): void
     {
         $json = '{
             "type": "date-time"
@@ -125,7 +129,7 @@ class DatetimeValidatorTest extends TestCase
         $this->assertInstanceOf(DatetimeValidator::class, $validationObject);
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertEquals('date-time', $this->object->getType());
     }

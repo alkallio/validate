@@ -13,6 +13,6 @@ interface IFormatValidator
     public function validateFormat(
         string $data,
         string $format,
-        \stdClass $formatProperties = null
+        \stdClass|null $formatProperties = null
     ): ValidateResult;
 }

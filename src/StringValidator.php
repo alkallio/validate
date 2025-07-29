@@ -189,9 +189,7 @@ class StringValidator extends \Phramework\Validate\BaseValidator
                 $return->value = $value;
             } else {
                 //or filter
-                $return->value = strip_tags(
-                    filter_var($value, FILTER_SANITIZE_STRING)
-                );
+                $return->value = htmlspecialchars(strip_tags($value), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
             }
         }
 

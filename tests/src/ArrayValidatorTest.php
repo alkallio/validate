@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class ArrayValidatorTest extends TestCase
@@ -24,11 +25,9 @@ class ArrayValidatorTest extends TestCase
      * Tears down the fixture, for example, closes a network connection.
      * This method is called after a test is executed.
      */
-    protected function tearDown(): void
-    {
-    }
+    protected function tearDown(): void {}
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new ArrayValidator(
             1,
@@ -37,54 +36,47 @@ class ArrayValidatorTest extends TestCase
             true,
             false
         );
+        $this->assertInstanceOf(ArrayValidator::class, $validator);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure1()
+    public function testConstructFailure1(): void
     {
-        $validator = new ArrayValidator(
+        $this->expectException(\Exception::class);
+        new ArrayValidator(
             1,
             3,
             []
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure2()
+    public function testConstructFailure2(): void
     {
-        $validator = new ArrayValidator(
+        $this->expectException(\Exception::class);
+        new ArrayValidator(
             'a'
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure3()
+    public function testConstructFailure3(): void
     {
-        $validator = new ArrayValidator(
+        $this->expectException(\Exception::class);
+        new ArrayValidator(
             3,
             1
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure4()
+    public function testConstructFailure4(): void
     {
-        $validator = new ArrayValidator(
+        $this->expectException(\Exception::class);
+        new ArrayValidator(
             1,
             3,
             new \stdClass()
         );
     }
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input
         return [
@@ -95,31 +87,27 @@ class ArrayValidatorTest extends TestCase
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            [1],
-            ['0 items' => []],
-            ['>3 items' => [1,2,3,4,5,6]]
+            'not an array' => [1],
+            '0 items' => [[]],
+            '>3 items' => [[1, 2, 3, 4, 5, 6]]
         ];
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(array $input): void
     {
         $return = $this->object->validate($input);
 
-        $this->assertInternalType('array', $return->value);
+        $this->assertIsArray($return->value);
         $this->assertTrue($return->status);
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(mixed $input): void
     {
         $return = $this->object->validate($input);
 
@@ -130,7 +118,7 @@ class ArrayValidatorTest extends TestCase
         );
     }
 
-    public function testValidateUnique()
+    public function testValidateUnique(): void
     {
         $validator = new ArrayValidator(
             1,
@@ -148,7 +136,7 @@ class ArrayValidatorTest extends TestCase
         $this->assertFalse($return->status);
     }
 
-    public function testValidateUniqueObject()
+    public function testValidateUniqueObject(): void
     {
         $validator = new ArrayValidator(
             1,
@@ -172,7 +160,7 @@ class ArrayValidatorTest extends TestCase
         $this->assertFalse($return->status);
     }
 
-    public function testValidateItems()
+    public function testValidateItems(): void
     {
         $validator = new ArrayValidator(
             1,
@@ -199,7 +187,7 @@ class ArrayValidatorTest extends TestCase
         $this->assertFalse($return->status);
     }
 
-    public function testCreateFromJSON()
+    public function testCreateFromJSON(): void
     {
         $json = '{
           "type": "array",
@@ -247,12 +235,12 @@ class ArrayValidatorTest extends TestCase
         $this->assertFalse($return->status);
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertEquals('array', $this->object->getType());
     }
 
-    public function testEquals()
+    public function testEquals(): void
     {
         $this->assertTrue(
             ArrayValidator::equals(
@@ -298,28 +286,29 @@ class ArrayValidatorTest extends TestCase
         );
     }
 
-    public function testSetValidateCallback()
+    public function testSetValidateCallback(): void
     {
         $value = [1, 2];
 
         $validator = (new ArrayValidator())
             ->setValidateCallback(
-            /**
-             * @param ValidateResult $validateResult
-             * @param BaseValidator $validator
-             * @return ValidateResult
-             */
+                /**
+                 * @param ValidateResult $validateResult
+                 * @param BaseValidator $validator
+                 * @return ValidateResult
+                 */
                 function ($validateResult, $validator) use ($value) {
                     $validateResult->value = $value;
 
                     return $validateResult;
-                });
+                }
+            );
 
         $this->assertInstanceOf(ArrayValidator::class, $validator);
 
         $parsed = $validator->parse(['a', 'b', 'c']);
 
-        $this->assertInternalType('array', $parsed);
+        $this->assertIsArray($parsed);
         $this->assertEquals($value, $parsed);
     }
 }

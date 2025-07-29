@@ -51,7 +51,7 @@ class ValidateResult implements \JsonSerializable
         $this->errorObject = $errorObject;
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return get_object_vars($this);
     }

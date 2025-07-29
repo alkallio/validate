@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -29,59 +30,56 @@ class UsernameValidatorTest extends TestCase
      * This method is called after a test is executed.
      */
     protected function tearDown(): void
-    {
+        {
     }
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input, expected
         return [
-            ['nohponex'],
-            ['NohponeX'],
-            ['nohp_onex'],
-            ['nohp_o.nex']
+            'lowercase' => ['nohponex'],
+            'mixed case' => ['NohponeX'],
+            'with underscore' => ['nohp_onex'],
+            'with dot' => ['nohp_o.nex']
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            ['too short' =>  'ni'],
-            ['too long' => 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'],
-            ['invalid character' => 'nohponεξ'],
-            ['invalid character +' => '+nohponex'],
-            ['invalid character @' => '@nohponex'],
+            'too short' => ['ni'],
+            'too long' => ['xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'],
+            'invalid character epsilon' => ['nohponεξ'],
+            'invalid character +' => ['+nohponex'],
+            'invalid character @' => ['@nohponex'],
         ];
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new UsernameValidator();
+        $this->assertInstanceOf(UsernameValidator::class, $validator);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(string $input): void
     {
         $return = $this->object->validate($input);
 
-        $this->assertInternalType('string', $return->value);
+        $this->assertIsString($return->value);
         $this->assertTrue($return->status);
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(string $input): void
     {
         $return = $this->object->validate($input);
 
         $this->assertFalse($return->status);
     }
 
-    public function testCreateFromJSON()
+    public function testCreateFromJSON(): void
     {
         $json = '{
             "type": "username"
@@ -92,22 +90,23 @@ class UsernameValidatorTest extends TestCase
         $this->assertInstanceOf(UsernameValidator::class, $validationObject);
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
-        $this->assertEquals('username', $this->object->getType());
+        $this->assertSame('username', $this->object->getType());
     }
 
-    public function testSetUsernamePattern()
+    public function testGetAndSetUsernamePattern(): void
     {
-        UsernameValidator::setUsernamePattern('/^[A-Za-z0-9_\.]{3,32}$/');
-    }
+        $originalPattern = UsernameValidator::getUsernamePattern();
 
-    public function testGetUsernamePattern()
-    {
-        $pattern = '/^[A-Za-z0-9_\.]{3,6}$/';
-        
-        UsernameValidator::setUsernamePattern($pattern);
-
-        $this->assertSame($pattern, UsernameValidator::getUsernamePattern());
+        try {
+            $pattern = '/^[a-z]+$/';
+            UsernameValidator::setUsernamePattern($pattern);
+            $this->assertSame($pattern, UsernameValidator::getUsernamePattern());
+        } finally {
+            //Restore original pattern to not affect other tests
+            UsernameValidator::setUsernamePattern($originalPattern);
+        }
     }
 }
+

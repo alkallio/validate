@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -11,7 +12,7 @@ class StringValidatorTest extends TestCase
 {
 
     /**
-     * @var String
+     * @var StringValidator
      */
     protected $object;
 
@@ -36,80 +37,73 @@ class StringValidatorTest extends TestCase
     {
     }
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input, expected
         return [
-            ['abx34scd3', 'abx34scd3'],
-            ['abcd0', 'abcd0'],
-            ['a2cx2', 'a2cx2'],
+            'valid 1' => ['abx34scd3', 'abx34scd3'],
+            'valid 2' => ['abcd0', 'abcd0'],
+            'valid 3' => ['a2cx2', 'a2cx2'],
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            [''],
-            [new \stdClass()],
-            [['x', 'array']], //because of type
-            [1], //because of type
-            [2],
-            [-10],
-            ['az9'], //because of minLength
-            ['abc'], //because of pattern
-            ['9abc4'], //because of pattern
-            ['asssssssssssssssssssbc9'], //because of maxLength
+            'empty string' => [''],
+            'object' => [new \stdClass()],
+            'array' => [['x', 'array']], //because of type
+            'integer 1' => [1], //because of type
+            'integer 2' => [2],
+            'integer -10' => [-10],
+            'too short' => ['az9'], //because of minLength
+            'pattern mismatch 1' => ['abc'], //because of pattern
+            'pattern mismatch 2' => ['9abc4'], //because of pattern
+            'too long' => ['asssssssssssssssssssbc9'], //because of maxLength
         ];
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new StringValidator();
+        $this->assertInstanceOf(StringValidator::class, $validator);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure()
+    public function testConstructFailure(): void
     {
-        $validator = new StringValidator(-1);
+        $this->expectException(\Exception::class);
+        new StringValidator(-1);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure2()
+    public function testConstructFailure2(): void
     {
-        $validator = new StringValidator(3, 2);
+        $this->expectException(\Exception::class);
+        new StringValidator(3, 2);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input, $expected)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(string $input, string $expected): void
     {
         $return = $this->object->validate($input);
 
-        $this->assertInternalType('string', $return->value);
-        $this->assertEquals($expected, $return->value);
+        $this->assertIsString($return->value);
+        $this->assertSame($expected, $return->value);
         $this->assertTrue($return->status);
     }
 
-    public function testValidateSuccessRaw()
+    public function testValidateSuccessRaw(): void
     {
         $this->object->raw = true;
         $return = $this->object->validate('abx34scd3');
 
-        $this->assertInternalType('string', $return->value);
-        $this->assertEquals('abx34scd3', $return->value);
+        $this->assertIsString($return->value);
+        $this->assertSame('abx34scd3', $return->value);
         $this->assertTrue($return->status);
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(mixed $input): void
     {
         $return = $this->object->validate($input);
 
@@ -119,7 +113,7 @@ class StringValidatorTest extends TestCase
     /**
      * Validate against common enum keyword
      */
-    public function testValidateCommon()
+    public function testValidateCommon(): void
     {
         $validator = (new StringValidator(0, 10));
 
@@ -138,7 +132,7 @@ class StringValidatorTest extends TestCase
         );
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertEquals('string', $this->object->getType());
     }

@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Phramework\Exceptions\IncorrectParametersException;
 
@@ -37,43 +38,42 @@ class ObjectValidatorTest extends TestCase
     {
     }
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input
         return [
-            [(object)['ok' => true, 'str2' => 'my str']],
-            [(object)['ok' => 'true', 'okk' => '123']],
-            [(object)['ok' => false, 'okk' => 'xyz' ]],
+            'valid 1' => [(object)['ok' => true, 'str2' => 'my str']],
+            'valid 2' => [(object)['ok' => 'true', 'okk' => '123']],
+            'valid 3' => [(object)['ok' => false, 'okk' => 'xyz' ]],
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            [1], //not an array or object
-            [['ok']], //`ok` is not an object key
-            [['abc']],
-            [(object)['str' => 'my strxxxxxxxxxxx', 'ok' => false]],
-            [(object)['str' => 'my str', 'okk' => false]],
-            [(object)(['okk' => 'hello'])], //because missing ok
-            [['ok'=> 'omg', 'okk' => '2']], //because of ok is not boolean
-            [(object)['ok' => 'true', 'str' => 'my str', 'okk' => '123']], //maxProperties
-            [(object)['ok' => 'true']] //minProperties
+            'not an object' => [1], //not an array or object
+            'ok not key' => [['ok']], //`ok` is not an object key
+            'simple array' => [['abc']],
+            'str too long' => [(object)['str' => 'my strxxxxxxxxxxx', 'ok' => false]],
+            'str okk false' => [(object)['str' => 'my str', 'okk' => false]],
+            'missing ok' => [(object)(['okk' => 'hello'])], //because missing ok
+            'ok not boolean' => [['ok'=> 'omg', 'okk' => '2']], //because of ok is not boolean
+            'maxProperties' => [(object)['ok' => 'true', 'str' => 'my str', 'okk' => '123']], //maxProperties
+            'minProperties' => [(object)['ok' => 'true']] //minProperties
         ];
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new ObjectValidator();
+        $this->assertInstanceOf(ObjectValidator::class, $validator);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure()
+    public function testConstructFailure(): void
     {
-        $validator = new ObjectValidator(
+        $this->expectException(\Exception::class);
+        new ObjectValidator(
             [],
             [],
             null,
@@ -81,12 +81,10 @@ class ObjectValidatorTest extends TestCase
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure1()
+    public function testConstructFailure1(): void
     {
-        $validator = new ObjectValidator(
+        $this->expectException(\Exception::class);
+        new ObjectValidator(
             [],
             [],
             null,
@@ -95,12 +93,10 @@ class ObjectValidatorTest extends TestCase
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure2()
+    public function testConstructFailure2(): void
     {
-        $validator = new ObjectValidator(
+        $this->expectException(\Exception::class);
+        new ObjectValidator(
             [],
             [],
             [],
@@ -109,25 +105,21 @@ class ObjectValidatorTest extends TestCase
         );
     }
 
-    /**
-     * @todo MUST be remove when BaseValidator are supported for "additionalProperties"
-     * @expectedException \Exception
-     */
-    public function testConstructFailure3()
+    public function testConstructFailure3(): void
     {
-        $validator = new ObjectValidator(
+        // @todo MUST be remove when BaseValidator are supported for "additionalProperties"
+        $this->expectException(\Exception::class);
+        new ObjectValidator(
             (object)['obj' => new IntegerValidator()],
             ['obj'],
             new IntegerValidator()
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure4()
+    public function testConstructFailure4(): void
     {
-        $validator = new ObjectValidator(
+        $this->expectException(\Exception::class);
+        new ObjectValidator(
             [],
             [],
             [],
@@ -137,18 +129,16 @@ class ObjectValidatorTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(object $input): void
     {
         $return = $this->object->validate($input);
 
         $this->assertTrue($return->status);
-        $this->assertInternalType('object', $return->value);
+        $this->assertIsObject($return->value);
     }
 
-    public function testValidateDependencies()
+    public function testValidateDependencies(): void
     {
         $validator = new ObjectValidator(
             (object) [
@@ -188,7 +178,7 @@ class ObjectValidatorTest extends TestCase
         ]);
     }
 
-    public function testValidateRecursiveSuccess()
+    public function testValidateRecursiveSuccess(): void
     {
         $validationObject = new ObjectValidator(
             [
@@ -282,23 +272,20 @@ class ObjectValidatorTest extends TestCase
             $parsed->request->response->default
         );
 
-        $this->assertInternalType(
-            'array',
+        $this->assertIsArray(
             $parsed->request->response->ruleObjects
         );
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(mixed $input): void
     {
         $return = $this->object->validate($input);
 
         $this->assertFalse($return->status);
     }
 
-    public function testValidateFailureMissing()
+    public function testValidateFailureMissing(): void
     {
         $validationObject = new ObjectValidator(
             [
@@ -349,7 +336,7 @@ class ObjectValidatorTest extends TestCase
             $return->errorObject
         );
     }
-    public function testValidateFailureAdditionalProperties()
+    public function testValidateFailureAdditionalProperties(): void
     {
         $validationObject = new ObjectValidator(
             [
@@ -367,7 +354,7 @@ class ObjectValidatorTest extends TestCase
         $this->assertFalse($return->status);
 
         $this->assertInstanceOf(
-            'Phramework\\Exceptions\\IncorrectParametersException',
+            \Phramework\Exceptions\IncorrectParametersException::class,
             $return->errorObject
         );
 
@@ -376,9 +363,7 @@ class ObjectValidatorTest extends TestCase
         $this->assertEquals('additionalProperties', $parameters[0]['failure']);
     }
 
-    /**
-      */
-    public function testAddPropertiesSuccess()
+    public function testAddPropertiesSuccess(): void
     {
         $originalPropertiesCount = count(get_object_vars(
             $this->object->properties
@@ -393,26 +378,20 @@ class ObjectValidatorTest extends TestCase
         );
     }
 
-    /**
-       * @expectedException \Exception
-     */
-    public function testAddPropertiesFailure()
+    public function testAddPropertiesFailure(): void
     {
+        $this->expectException(\Exception::class);
         $properties = 104;
         $this->object->addProperties($properties); //Not an array
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testAddPropertiesFailure2()
+    public function testAddPropertiesFailure2(): void
     {
+        $this->expectException(\Exception::class);
         $this->object->addProperties([]);
     }
 
-    /**
-      */
-    public function testAddPropertySuccess()
+    public function testAddPropertySuccess(): void
     {
         $key = 'my_key';
         $property = new ObjectValidator();
@@ -423,23 +402,21 @@ class ObjectValidatorTest extends TestCase
         );
     }
 
-    /**
-       * @expectedException \Exception
-     */
-    public function testAddPropertyFailure()
+    public function testAddPropertyFailure(): void
     {
+        $this->expectException(\Exception::class);
         $property = new ObjectValidator();
         $this->object->addProperty('new', $property);
 
         $this->object->addProperty('new', $property); //With same key
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertEquals('object', $this->object->getType());
     }
 
-    public function testParseSuccess()
+    public function testParseSuccess(): void
     {
         $input = (object)[
             'weight' => '5',
@@ -466,20 +443,18 @@ class ObjectValidatorTest extends TestCase
 
         $record = $validationObject->parse($input);
 
-        $this->assertInternalType('object', $record);
-        $this->assertInternalType('object', $record->obj);
-        $this->assertInternalType('float', $record->obj->not_required);
+        $this->assertIsObject($record);
+        $this->assertIsObject($record->obj);
+        $this->assertIsFloat($record->obj->not_required);
         $this->assertEquals(5, $record->weight);
         $this->assertTrue($record->obj->valid);
         $this->assertEquals(5.5, $record->obj->not_required);
     }
 
-    /**
-     * @expectedException \Exception
-     * @todo \Phramework\Exceptions\MissingParametersException
-     */
-    public function testParseFailure()
+    public function testParseFailure(): void
     {
+        $this->expectException(\Exception::class);
+        // @todo \Phramework\Exceptions\MissingParametersException
         $input = [
             'weight' => '5',
             'obj' => [
@@ -504,15 +479,13 @@ class ObjectValidatorTest extends TestCase
             ['weight'] //required
         );
 
-        $record = $validationObject->parse($input);
+        $validationObject->parse($input);
     }
 
-    /**
-     * @expectedException \Exception
-     * @todo \Phramework\Exceptions\IncorrectParametersException
-     */
-    public function testParseFailure2()
+    public function testParseFailure2(): void
     {
+        $this->expectException(\Exception::class);
+        // @todo \Phramework\Exceptions\IncorrectParametersException
         $input = [
             'weight' => '555', //out of range
             'obj' => [
@@ -537,10 +510,10 @@ class ObjectValidatorTest extends TestCase
             ['weight'] //required
         );
 
-        $record = $validationObject->parse($input);
+        $validationObject->parse($input);
     }
 
-    public function testSetValidateCallback()
+    public function testSetValidateCallback(): void
     {
         $value = 10;
 
@@ -573,7 +546,7 @@ class ObjectValidatorTest extends TestCase
         $this->assertNull($parsed);
     }
 
-    public function testValidateSetDefault()
+    public function testValidateSetDefault(): void
     {
         $validator = (new ObjectValidator(
             (object) [
@@ -595,7 +568,7 @@ class ObjectValidatorTest extends TestCase
         //Use root default
         $parsed = $validator->parse((object) []);
 
-        $this->assertInternalType('object', $parsed->address);
+        $this->assertIsObject($parsed->address);
         $this->assertSame(-1, $parsed->address->floor);
 
         //Use default
@@ -616,7 +589,7 @@ class ObjectValidatorTest extends TestCase
         $this->assertSame(1, $parsed->address->floor);
     }
 
-    public function testValidateSetDefaultNull()
+    public function testValidateSetDefaultNull(): void
     {
         $validator = (new ObjectValidator(
             (object) [
@@ -629,7 +602,7 @@ class ObjectValidatorTest extends TestCase
         $this->assertNull($parsed);
     }
 
-    public function testXVisibility()
+    public function testXVisibility(): void
     {
         $validator = new ObjectValidator(
             (object) [
@@ -669,7 +642,7 @@ class ObjectValidatorTest extends TestCase
         $this->markTestIncomplete();
     }
 
-    public function testXVisibilityOR()
+    public function testXVisibilityOR(): void
     {
         $validator = new ObjectValidator(
             (object) [
@@ -718,7 +691,7 @@ class ObjectValidatorTest extends TestCase
         $this->markTestIncomplete();
     }
 
-    public function testXVisibilitySubset()
+    public function testXVisibilitySubset(): void
     {
         $validator = new ObjectValidator(
             (object) [

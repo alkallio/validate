@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class OneOfTest extends TestCase
@@ -37,35 +38,35 @@ class OneOfTest extends TestCase
     {
     }
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input, expected
         return [
-            [0, 0], //exists only in UnsignedIntegerValidator
-            [-2, -2], //exists only in IntegerValidator
-            [2, 2], //exists only in UnsignedIntegerValidator
-            [100, 100], //exists only in UnsignedIntegerValidator
-            [13.4, 13.4], //exists only in Number
-            [[1, 2], [1, 2]],
-            [
+            'unsigned integer 0' => [0, 0], //exists only in UnsignedIntegerValidator
+            'signed integer -2' => [-2, -2], //exists only in IntegerValidator
+            'unsigned integer 2' => [2, 2], //exists only in UnsignedIntegerValidator
+            'unsigned integer 100' => [100, 100], //exists only in UnsignedIntegerValidator
+            'number 13.4' => [13.4, 13.4], //exists only in Number
+            'array' => [[1, 2], [1, 2]],
+            'object' => [
                 (object)['a' => 1],
                 (object)['a' => 1]
             ],
-            ['ab', 'ab'], //exists only in first string
-            ['ababab', 'ababab'] //exists only in first string
+            'string "ab"' => ['ab', 'ab'], //exists only in first string
+            'string "ababab"' => ['ababab', 'ababab'] //exists only in first string
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            [10], //exists in two
-            ['abc', 'abc'] //exists in both string
+            'integer 10 (in two validators)' => [10], //exists in two
+            'string "abc" (in two validators)' => ['abc'] //exists in both string
         ];
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new OneOf([
             new StringValidator(),
@@ -75,20 +76,17 @@ class OneOfTest extends TestCase
                 new StringValidator()
             )
         ]);
+        $this->assertInstanceOf(OneOf::class, $validator);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure()
+    public function testConstructFailure(): void
     {
-        $validator = new OneOf(['{"type": "integer"}']);
+        $this->expectException(\Exception::class);
+        new OneOf(['{"type": "integer"}']);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input, $expected)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(mixed $input, mixed $expected): void
     {
         $return = $this->object->validate($input);
 
@@ -97,17 +95,15 @@ class OneOfTest extends TestCase
         $this->assertEquals($expected, $return->value);
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input = null)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(mixed $input = null): void
     {
         $return = $this->object->validate($input);
 
-        $this->assertEquals(false, $return->status);
+        $this->assertFalse($return->status);
     }
 
-    public function testCreateFromJSON()
+    public function testCreateFromJSON(): void
     {
         $json = '{
           "oneOf": [
@@ -131,25 +127,23 @@ class OneOfTest extends TestCase
 
         $this->assertInstanceOf(OneOf::class, $validator);
 
-        $this->assertInternalType('array', $validator->oneOf);
+        $this->assertIsArray($validator->oneOf);
 
-        //Set validator
-        $this->object = $validator;
+        //Test success
+        $this->assertTrue($validator->validate('a')->status);
+        $this->assertTrue($validator->validate('abced')->status);
+        $this->assertTrue($validator->validate(10)->status);
 
-        $this->testValidateSuccess('a', 'a');
-        $this->testValidateSuccess('abced', 'abced');
-        $this->testValidateSuccess(10, 10);
-
-        $this->testValidateFailure('10');
-        $this->testValidateFailure('abc');
-
-        $this->setUp();
+        //Test failure because it matches multiple schemas
+        $this->assertFalse($validator->validate('10')->status);
+        //Test failure because it matches two schemas
+        $this->assertFalse($validator->validate('abc')->status);
     }
 
     /**
      * Validate against common enum keyword
      */
-    public function testValidateCommon()
+    public function testValidateCommon(): void
     {
         $validator = $this->object;
 
@@ -180,7 +174,7 @@ class OneOfTest extends TestCase
         );
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertSame(null, $this->object->getType());
     }

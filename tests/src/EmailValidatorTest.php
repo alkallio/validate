@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -32,56 +33,53 @@ class EmailValidatorTest extends TestCase
     {
     }
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input, expected
         return [
-            ['nohponex@gmail.com'],
-            ['nohponex_under@gmail.com'],
-            ['nohponex@mail.co.uk']
+            'gmail' => ['nohponex@gmail.com'],
+            'underscore' => ['nohponex_under@gmail.com'],
+            'co.uk' => ['nohponex@mail.co.uk'],
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            ['string' =>  '100'],
-            ['less than 10 characters' => 'nx@ma.il'],
-            ['dotless' => 'nohponex@gmailcom'],
-            ['longer' => 'nohponex_long_long_long_long_long@gmail.com'],
-            ['without@' => 'dasdjs#sdads.fd'],
-            ['number' => 124],
+            'string' => ['100'],
+            'less than 10 characters' => ['nx@ma.il'],
+            'dotless' => ['nohponex@gmailcom'],
+            'longer' => ['nohponex_long_long_long_long_long@gmail.com'],
+            'without@' => ['dasdjs#sdads.fd'],
+            'number' => [124],
         ];
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new EmailValidator();
+        $this->assertInstanceOf(EmailValidator::class, $validator);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(string $input): void
     {
         $return = $this->object->validate($input);
 
-        $this->assertInternalType('string', $return->value);
+        $this->assertIsString($return->value);
         $this->assertTrue($return->status);
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(mixed $input): void
     {
         $return = $this->object->validate($input);
 
         $this->assertFalse($return->status);
     }
 
-    public function testCreateFromJSON()
+    public function testCreateFromJSON(): void
     {
         $json = '{
             "type": "email"
@@ -92,7 +90,7 @@ class EmailValidatorTest extends TestCase
         $this->assertInstanceOf(EmailValidator::class, $validationObject);
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertEquals('email', $this->object->getType());
     }

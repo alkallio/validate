@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -32,43 +33,42 @@ class EnumValidatorTest extends TestCase
     {
     }
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input, expected
         return [
-            ['1', '1'],
-            ['2', '2'],
-            ['ok', 'ok'],
-            [5, 5],
-            [[1,2,3], [1, 2, 3]]
+            'string 1' => ['1', '1'],
+            'string 2' => ['2', '2'],
+            'string ok' => ['ok', 'ok'],
+            'integer 5' => [5, 5],
+            'array' => [[1, 2, 3], [1, 2, 3]],
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            [1],
-            [2],
-            ['5'],
-            [4],
-            ['7'],
-            ['string']
+            'integer 1 (wrong type)' => [1],
+            'integer 2 (wrong type)' => [2],
+            'string 5 (wrong type)' => ['5'],
+            'not in enum 4' => [4],
+            'not in enum 7' => ['7'],
+            'not in enum string' => ['string']
         ];
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new EnumValidator(
             ['1', '2', 'ok', 5],
             true
         );
+        $this->assertInstanceOf(EnumValidator::class, $validator);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input, $expected)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(mixed $input, mixed $expected): void
     {
         $return = $this->object->validate($input);
 
@@ -76,17 +76,15 @@ class EnumValidatorTest extends TestCase
         $this->assertSame($expected, $return->value);
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(mixed $input): void
     {
         $return = $this->object->validate($input);
 
         $this->assertFalse($return->status);
     }
 
-    public function testCreateFromJSON()
+    public function testCreateFromJSON(): void
     {
         $json = '{
             "type": "enum",
@@ -98,7 +96,7 @@ class EnumValidatorTest extends TestCase
         $this->assertInstanceOf(EnumValidator::class, $validationObject);
     }
 
-    public function testCreateFromJSONAndValidate()
+    public function testCreateFromJSONAndValidate(): void
     {
         $json = '{
             "type": "enum",
@@ -110,15 +108,13 @@ class EnumValidatorTest extends TestCase
 
         $this->assertInstanceOf(EnumValidator::class, $validationObject);
 
-        $validationObject->parse('1');
-        $validationObject->parse(1);
+        $this->assertSame(1, $validationObject->parse('1'));
+        $this->assertSame(1, $validationObject->parse(1));
     }
 
-    /**
-     * @expectedException \Phramework\Exceptions\IncorrectParametersException
-     */
-    public function testCreateFromJSONAndValidateType()
+    public function testCreateFromJSONAndValidateType(): void
     {
+        $this->expectException(\Phramework\Exceptions\IncorrectParametersException::class);
         $json = '{
             "type": "enum",
             "enum": [1, 2, 3],
@@ -130,7 +126,7 @@ class EnumValidatorTest extends TestCase
         $validationObject->parse('1');
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertEquals('enum', $this->object->getType());
     }

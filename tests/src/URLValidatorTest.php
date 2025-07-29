@@ -2,13 +2,14 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class URLValidatorTest extends TestCase
 {
 
     /**
-     * @var URL
+     * @var URLValidator
      */
     protected $object;
 
@@ -29,58 +30,55 @@ class URLValidatorTest extends TestCase
     {
     }
 
-    public function validateSuccessProvider()
-    {
-        //input, expected
-        return [
-            ['https://nohponex.gr'],
-            ['http://www.thmmy.gr/dir/file.php?param=ok&second=false#ok'],
-            ['http://127.0.0.1/app']
-        ];
-    }
-
-    public function validateFailureProvider()
+    public static function validateSuccessProvider(): array
     {
         //input
         return [
-            ['100'],
-            [540],
-            ['nx@ma.il'],
-            ['nohponex@gmailcom'],
-            ['http::://nohponex.gr'],
-            ['nohponex.gr'],
-            ['nohponex'],
-            ['//nohponex.gr']
+            'simple https' => ['https://nohponex.gr'],
+            'http with path, query, fragment' => ['http://www.thmmy.gr/dir/file.php?param=ok&second=false#ok'],
+            'http with ip' => ['http://127.0.0.1/app']
         ];
     }
 
-    public function testConstruct()
+    public static function validateFailureProvider(): array
     {
-        $validator = new URLValidator();
+        //input
+        return [
+            'string number' => ['100'],
+            'integer' => [540],
+            'email-like' => ['nx@ma.il'],
+            'email-like no dot' => ['nohponex@gmailcom'],
+            'double colon' => ['http::://nohponex.gr'],
+            'no scheme' => ['nohponex.gr'],
+            'just domain part' => ['nohponex'],
+            'scheme relative' => ['//nohponex.gr']
+        ];
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input)
+    public function testConstruct(): void
+    {
+        $validator = new URLValidator();
+        $this->assertInstanceOf(URLValidator::class, $validator);
+    }
+
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(string $input): void
     {
         $return = $this->object->validate($input);
 
-        $this->assertInternalType('string', $return->value);
+        $this->assertIsString($return->value);
         $this->assertTrue($return->status);
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(mixed $input): void
     {
         $return = $this->object->validate($input);
 
         $this->assertFalse($return->status);
     }
 
-    public function testCreateFromJSON()
+    public function testCreateFromJSON(): void
     {
         $json = '{
             "type": "url",
@@ -103,8 +101,8 @@ class URLValidatorTest extends TestCase
         );
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
-        $this->assertEquals('url', $this->object->getType());
+        $this->assertSame('url', $this->object->getType());
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -32,73 +33,70 @@ class BooleanValidatorTest extends TestCase
     {
     }
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input, expected
         return [
-            [1, true],
-            ['1', true],
-            [true, true],
-            ['true', true],
-            ['TRUE', true],
-            ['yes', true],
-            ['on', true],
-            [0, false],
-            ['0', false],
-            [false, false],
-            ['false', false],
-            ['FALSE', false],
-            ['no', false],
-            ['off', false]
+            'integer 1' => [1, true],
+            'string 1' => ['1', true],
+            'boolean true' => [true, true],
+            'string true lowercase' => ['true', true],
+            'string true uppercase' => ['TRUE', true],
+            'string yes' => ['yes', true],
+            'string on' => ['on', true],
+            'integer 0' => [0, false],
+            'string 0' => ['0', false],
+            'boolean false' => [false, false],
+            'string false lowercase' => ['false', false],
+            'string false uppercase' => ['FALSE', false],
+            'string no' => ['no', false],
+            'string off' => ['off', false]
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            ['100'],
-            ['01'],
-            [10],
-            [-1],
-            [124],
-            ['τρθε'],
-            ['positive'],
-            ['negative']
+            'string 100' => ['100'],
+            'string 01' => ['01'],
+            'integer 10' => [10],
+            'integer -1' => [-1],
+            'integer 124' => [124],
+            'greek string' => ['τρθε'],
+            'string positive' => ['positive'],
+            'string negative' => ['negative']
         ];
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new BooleanValidator();
+        $this->assertInstanceOf(BooleanValidator::class, $validator);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input, $expected)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess($input, bool $expected): void
     {
         $return = $this->object->validate($input);
 
-        $this->assertInternalType('boolean', $return->value);
-        $this->assertEquals($expected, $return->value);
+        $this->assertIsBool($return->value);
+        $this->assertSame($expected, $return->value);
         $this->assertTrue($return->status);
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure($input): void
     {
         $return = $this->object->validate($input);
 
-        $this->assertEquals(false, $return->status);
+        $this->assertFalse($return->status);
     }
 
     /**
      * Validate against common enum keyword
      */
-    public function testValidateCommon()
+    public function testValidateCommon(): void
     {
         $validator = (new BooleanValidator());
 
@@ -117,7 +115,7 @@ class BooleanValidatorTest extends TestCase
         );
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertEquals('boolean', $this->object->getType());
     }

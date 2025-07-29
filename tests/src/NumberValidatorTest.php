@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -28,90 +29,80 @@ class NumberValidatorTest extends TestCase
      * Tears down the fixture, for example, closes a network connection.
      * This method is called after a test is executed.
      */
-    protected function tearDown(): void
-    {
-    }
+    protected function tearDown(): void {}
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input, expected (float)
         return [
-            ['100', 100.0],
-            [124, 124.0],
-            [0, 0.0],
-            [-10, -10.0],
-            [-99, -99.0],
-            [3.5, 3.5],
-            ['13.5', 13.5],
-            ['-23.6', -23.6]
+            'string 100' => ['100', 100.0],
+            'integer 124' => [124, 124.0],
+            'integer 0' => [0, 0.0],
+            'integer -10' => [-10, -10.0],
+            'integer -99' => [-99, -99.0],
+            'float 3.5' => [3.5, 3.5],
+            'string "13.5"' => ['13.5', 13.5],
+            'string "-23.6"' => ['-23.6', -23.6]
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            ['a'],
-            ['abc'],
-            ['-0x'],
-            ['abc'],
-            ['+xyz'],
-            ['++30'],
-            [-1000], //should fail becaus of exclusiveMinimum
-            [-10000000],
-            [10000000],
-            ['-1000000000']
+            'string a' => ['a'],
+            'string abc' => ['abc'],
+            'hex string' => ['-0x'],
+            'plus string' => ['+xyz'],
+            'double plus string' => ['++30'],
+            'exclusive minimum' => [-1000], //should fail because of exclusiveMinimum
+            'out of bounds minimum' => [-10000000],
+            'out of bounds maximum' => [10000000],
+            'out of bounds string' => ['-1000000000']
         ];
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new NumberValidator(
             0,
             1
         );
+        $this->assertInstanceOf(NumberValidator::class, $validator);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure1()
+    public function testConstructFailure1(): void
     {
-        $validator = new NumberValidator(
+        $this->expectException(\Exception::class);
+        new NumberValidator(
             'a',
             1
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure2()
+    public function testConstructFailure2(): void
     {
-        $validator = new NumberValidator(
+        $this->expectException(\Exception::class);
+        new NumberValidator(
             1,
             'a'
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure3()
+    public function testConstructFailure3(): void
     {
-        $validator = new NumberValidator(
+        $this->expectException(\Exception::class);
+        new NumberValidator(
             1,
             2,
             'a'
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure4()
+    public function testConstructFailure4(): void
     {
-        $validator = new NumberValidator(
+        $this->expectException(\Exception::class);
+        new NumberValidator(
             1,
             2,
             true,
@@ -119,12 +110,10 @@ class NumberValidatorTest extends TestCase
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure5()
+    public function testConstructFailure5(): void
     {
-        $validator = new NumberValidator(
+        $this->expectException(\Exception::class);
+        new NumberValidator(
             1,
             2,
             true,
@@ -133,21 +122,17 @@ class NumberValidatorTest extends TestCase
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure6()
+    public function testConstructFailure6(): void
     {
-        $validator = new NumberValidator(
+        $this->expectException(\Exception::class);
+        new NumberValidator(
             2,
             1
         );
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testCreateFromJSON($input, $expected)
+    #[DataProvider('validateSuccessProvider')]
+    public function testCreateFromJSON(string|int|float $input, float $expected): void
     {
         $json = '{
             "type": "number",
@@ -172,7 +157,7 @@ class NumberValidatorTest extends TestCase
             'Default must be passed'
         );
 
-        $this->assertObjectNotHasAttribute(
+        $this->assertObjectNotHasProperty(
             'x-extra',
             $validatorObject,
             'Attribute must not exists'
@@ -185,45 +170,35 @@ class NumberValidatorTest extends TestCase
     /**
      * Helper method
      */
-    private function validateSuccess(NumberValidator $object, $input, $expected)
+    private function validateSuccess(NumberValidator $object, string|int|float $input, float $expected): void
     {
         $return = $object->validate($input);
 
         $this->assertTrue($return->status);
-        $this->assertInternalType('float', $return->value);
+        $this->assertIsFloat($return->value);
         $this->assertSame($expected, $return->value);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input, $expected)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(string|int|float $input, float $expected): void
     {
         $this->validateSuccess($this->object, $input, $expected);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateNumberSuccess($input, $expected)
-    {
-        $this->validateSuccess($this->object, $input, $expected);
-    }
-
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateNumberFailure($input)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(mixed $input): void
     {
         $return = $this->object->validate($input);
 
         $this->assertFalse($return->status);
     }
 
-    public function testValidateFailureMultipleOf()
+    public function testValidateFailureMultipleOf(): void
     {
         $validator = new NumberValidator(null, null, null, null, 2);
         $return = $validator->validate(5);
+
+        $this->assertFalse($return->status);
 
         $parameters = $return->errorObject->getParameters();
 
@@ -233,7 +208,7 @@ class NumberValidatorTest extends TestCase
     /**
      * Validate against common enum keyword
      */
-    public function testValidateCommon()
+    public function testValidateCommon(): void
     {
         $validator = (new NumberValidator(0, 10));
 
@@ -252,7 +227,7 @@ class NumberValidatorTest extends TestCase
         );
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertEquals('number', $this->object->getType());
     }

@@ -2,6 +2,8 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 
 class AllOfTest extends TestCase
@@ -29,14 +31,12 @@ class AllOfTest extends TestCase
      * Tears down the fixture, for example, closes a network connection.
      * This method is called after a test is executed.
      */
-    protected function tearDown(): void
-    {
-    }
+    protected function tearDown(): void {}
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider()
     {
         //input, expected
-        return [
+        return  [
             [1, 1],
             [10, 10],
             [100, 100],
@@ -44,7 +44,7 @@ class AllOfTest extends TestCase
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider()
     {
         //input
         return [
@@ -73,46 +73,33 @@ class AllOfTest extends TestCase
                 new StringValidator()
             )
         ]);
+        $this->assertInstanceOf(AllOf::class, $validator);
     }
 
-    /**
-     * @expectedException \Exception
-     */
     public function testConstructFailure()
     {
+        $this->expectException(\Exception::class);
         $validator = new AllOf(['{"type": "integer"}']);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input, $expected)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(int $input, int $expected): void
     {
         $return = $this->object->validate($input);
 
         $this->assertTrue($return->status);
 
-        if (is_array($return->value)) {
-            $this->assertInternalType('array', $return->value);
+        $this->assertIsInt($return->value);
 
-            foreach ($return->value as $values) {
-                $this->assertInternalType('integer', $values);
-            }
-        } else {
-            $this->assertInternalType('integer', $return->value);
-        }
-
-        $this->assertEquals($expected, $return->value);
+        $this->assertSame($expected, $return->value);
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input = null)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure($input = null): void
     {
         $return = $this->object->validate($input);
 
-        $this->assertSame(false, $return->status);
+        $this->assertFalse($return->status);
     }
 
     public function testCreateFromJSON()
@@ -135,7 +122,7 @@ class AllOfTest extends TestCase
         //Set validator
         $this->object = $validator;
 
-        $this->assertInternalType('array', $validator->allOf);
+        $this->assertIsArray($validator->allOf);
 
         $this->testValidateSuccess(10, 10);
         $this->testValidateSuccess(-1, -1);
@@ -147,52 +134,46 @@ class AllOfTest extends TestCase
         return $validator;
     }
 
-    /**
-     * @depends testCreateFromJSON
-     */
+    #[Depends('testCreateFromJSON')]
     public function testToObject($validator)
     {
         $object = $validator->toObject();
 
-        $this->assertObjectHasAttribute('allOf', $object);
-        $this->assertInternalType('array', $object->allOf);
+        $this->assertObjectHasProperty('allOf', $object);
+        $this->assertIsArray($object->allOf);
 
-        $this->assertInternalType('object', $object->allOf[0]);
-        $this->assertInternalType('object', $object->allOf[1]);
+        $this->assertIsObject($object->allOf[0]);
+        $this->assertIsObject($object->allOf[1]);
     }
 
-    /**
-     * @depends testCreateFromJSON
-     */
+    #[Depends('testCreateFromJSON')]
     public function testToArray($validator)
     {
         $object = $validator->toArray();
 
         $this->assertArrayHasKey('allOf', $object);
-        $this->assertInternalType('array', $object['allOf']);
+        $this->assertIsArray($object['allOf']);
 
-        $this->assertInternalType('array', $object['allOf'][0]);
-        $this->assertInternalType('array', $object['allOf'][1]);
+        $this->assertIsArray($object['allOf'][0]);
+        $this->assertIsArray($object['allOf'][1]);
     }
 
-    /**
-     * @depends testCreateFromJSON
-     */
+    #[Depends('testCreateFromJSON')]
     public function testToJSON($validator)
     {
         $json = $validator->toJSON();
 
-        $this->assertInternalType('string', $json);
+        $this->assertIsString($json);
 
         $object = json_decode($json);
 
-        $this->assertObjectHasAttribute('allOf', $object);
+        $this->assertObjectHasProperty('allOf', $object);
     }
 
     /**
      * Validate against common enum keyword
      */
-    public function testValidateCommon()
+    public function testValidateCommon(): void
     {
         $validator = $this->object;
 
@@ -217,7 +198,7 @@ class AllOfTest extends TestCase
         );
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertSame(null, $this->object->getType());
     }

@@ -798,7 +798,7 @@ abstract class BaseValidator implements \JsonSerializable
         return $object;
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return $this->toArray();
     }

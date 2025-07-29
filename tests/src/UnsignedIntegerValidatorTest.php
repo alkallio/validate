@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,44 +25,43 @@ class UnsignedIntegerValidatorTest extends TestCase
         $this->object = new UnsignedIntegerValidator(10, 1000, true);
     }
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input, expected
         return [
-            ['100', 100],
-            [124, 124]
+            'string 100' => ['100', 100],
+            'integer 124' => [124, 124]
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            ['-0x'],
-            ['abc'],
-            ['+xyz']
-            [-1000],
-            ['-4'],
-            [4], //because of min,
-            [1.4],
-            [-13.5]
+            'hex string' => ['-0x'],
+            'alpha string' => ['abc'],
+            'plus string' => ['+xyz'],
+            'negative integer' => [-1000],
+            'negative string' => ['-4'],
+            'below minimum' => [4], //because of min
+            'float value' => [1.4],
+            'negative float' => [-13.5]
         ];
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new UnsignedIntegerValidator(
             0,
             1
         );
+        $this->assertInstanceOf(UnsignedIntegerValidator::class, $validator);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure()
+    public function testConstructFailure(): void
     {
-        $validator = new UnsignedIntegerValidator(
+        $this->expectException(\Exception::class);
+        new UnsignedIntegerValidator(
             -1
         );
     }
@@ -69,24 +69,30 @@ class UnsignedIntegerValidatorTest extends TestCase
     /**
      * Helper method
      */
-    private function validateSuccess(UnsignedIntegerValidator $object, $input, $expected)
+    private function validateSuccess(UnsignedIntegerValidator $object, string|int $input, int $expected): void
     {
         $return = $object->validate($input);
 
         $this->assertTrue($return->status);
-        $this->assertInternalType('integer', $return->value);
+        $this->assertIsInt($return->value);
         $this->assertSame($expected, $return->value);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input, $expected)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(string|int $input, int $expected): void
     {
         $this->validateSuccess($this->object, $input, $expected);
     }
 
-    public function testCreateFromJSON()
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(mixed $input): void
+    {
+        $return = $this->object->validate($input);
+
+        $this->assertFalse($return->status);
+    }
+
+    public function testCreateFromJSON(): void
     {
         $json = '{
             "type": "unsignedinteger"
@@ -97,7 +103,7 @@ class UnsignedIntegerValidatorTest extends TestCase
         $this->assertInstanceOf(UnsignedIntegerValidator::class, $validationObject);
     }
 
-    public function testCreateFromJSONAlias()
+    public function testCreateFromJSONAlias(): void
     {
         $json = '{
             "type": "uint"
@@ -108,8 +114,8 @@ class UnsignedIntegerValidatorTest extends TestCase
         $this->assertInstanceOf(UnsignedIntegerValidator::class, $validationObject);
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
-        $this->assertEquals('unsignedinteger', $this->object->getType());
+        $this->assertSame('unsignedinteger', $this->object->getType());
     }
 }

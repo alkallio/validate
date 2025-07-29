@@ -2,7 +2,6 @@
 
 namespace Phramework\Validate;
 
-use Nette\Neon\Exception;
 use PHPUnit\Framework\TestCase;
 use Phramework\Exceptions\IncorrectParametersException;
 
@@ -35,11 +34,9 @@ class BaseValidatorTest extends TestCase
      * Tears down the fixture, for example, closes a network connection.
      * This method is called after a test is executed.
      */
-    protected function tearDown(): void
-    {
-    }
+    protected function tearDown(): void {}
 
-    public function testParseStatic()
+    public function testParseStatic(): void
     {
         $this->assertSame(
             5,
@@ -54,12 +51,12 @@ class BaseValidatorTest extends TestCase
 
         $o = ObjectValidator::parseStatic(['ok' => true]);
 
-        $this->assertInternalType('object', $o);
-        $this->assertObjectHasAttribute('ok', $o);
+        $this->assertIsObject($o);
+        $this->assertObjectHasProperty('ok', $o);
         $this->assertSame(true, $o->ok);
     }
 
-    public function testCreateFromJSON()
+    public function testCreateFromJSON(): void
     {
         $json = '{
             "type": "integer",
@@ -77,7 +74,7 @@ class BaseValidatorTest extends TestCase
         );
     }
 
-    public function testCreateFromJSON2()
+    public function testCreateFromJSON2(): void
     {
         $json = '{
             "type": "unsignedinteger",
@@ -96,7 +93,7 @@ class BaseValidatorTest extends TestCase
         );
     }
 
-    public function testCreateFromJSON3()
+    public function testCreateFromJSON3(): void
     {
         $json = '
         {
@@ -122,8 +119,7 @@ class BaseValidatorTest extends TestCase
         $validationObject = ObjectValidator::createFromJSON($json);
 
         $this->assertInstanceOf(ObjectValidator::class, $validationObject);
-        $this->assertInternalType(
-            'object',
+        $this->assertIsObject(
             $validationObject->properties
         );
         $this->assertInstanceOf(
@@ -142,8 +138,7 @@ class BaseValidatorTest extends TestCase
             UnsignedIntegerValidator::class,
             $data->properties->order
         );
-        $this->assertInternalType(
-            'array',
+        $this->assertIsArray(
             $data->properties->type->enum
         );
 
@@ -153,7 +148,7 @@ class BaseValidatorTest extends TestCase
         );
     }
 
-    public function testCreateFromJSONNot()
+    public function testCreateFromJSONNot(): void
     {
         $json = '{
             "type": "integer",
@@ -174,25 +169,21 @@ class BaseValidatorTest extends TestCase
         $this->assertFalse($return->status);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testCreateFromJSONFailure()
+    public function testCreateFromJSONFailure(): void
     {
+        $this->expectException(\Exception::class);
         $json = '{
             "type": "xyz",
             "minimum" : -1000,
             "maximum" : 1000
         }';
 
-        $validationObject = IntegerValidator::createFromJSON($json);
+        IntegerValidator::createFromJSON($json);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testCreateFromJSONFailure2()
+    public function testCreateFromJSONFailure2(): void
     {
+        $this->expectException(\Exception::class);
         //Add an unexpected comma at the end of JSON string
         $json = '{
             "type": "interger",
@@ -200,12 +191,12 @@ class BaseValidatorTest extends TestCase
             "maximum" : 1000,
         }';
 
-        $validationObject = IntegerValidator::createFromJSON($json);
+        IntegerValidator::createFromJSON($json);
     }
 
 
 
-    public function testParseSuccess()
+    public function testParseSuccess(): void
     {
         $validationObject = new ObjectValidator(
             [ //properties
@@ -231,15 +222,15 @@ class BaseValidatorTest extends TestCase
         ];
 
         $record = $validationObject->parse($input);
-        $this->assertInternalType('object', $record);
-        $this->assertInternalType('object', $record->obj);
-        $this->assertInternalType('float', $record->obj->not_required);
+        $this->assertIsObject($record);
+        $this->assertIsObject($record->obj);
+        $this->assertIsFloat($record->obj->not_required);
         $this->assertEquals(5, $record->weight);
         $this->assertTrue($record->obj->valid);
         $this->assertEquals(5.5, $record->obj->not_required);
     }
 
-    public function testParseSuccess2()
+    public function testParseSuccess2(): void
     {
         $input = '5';
 
@@ -247,16 +238,13 @@ class BaseValidatorTest extends TestCase
 
         $cleanInput = $validationModel->parse($input);
 
-        $this->assertInternalType('integer', $cleanInput);
+        $this->assertIsInt($cleanInput);
         $this->assertEquals(5, $cleanInput);
     }
 
-    /**
-     * @expectedException \Exception
-     * @todo \Phramework\Exceptions\MissingParametersException
-     */
-    public function testParseFailure()
+    public function testParseFailure(): void
     {
+        $this->expectException(\Exception::class);
         $input = [
             'weight' => '5',
             'obj' => [
@@ -280,15 +268,12 @@ class BaseValidatorTest extends TestCase
             ['weight'] //required
         );
 
-        $record = $validationObject->parse($input);
+        $validationObject->parse($input);
     }
 
-    /**
-     * @expectedException \Exception
-     * @todo \Phramework\Exceptions\IncorrectParametersException
-     */
-    public function testParseFailure2()
+    public function testParseFailure2(): void
     {
+        $this->expectException(\Exception::class);
         $input = [
             'weight' => '555', //out of range
             'obj' => [
@@ -313,36 +298,35 @@ class BaseValidatorTest extends TestCase
             ['weight'] //required
         );
 
-        $record = $validationObject->parse($input);
+        $validationObject->parse($input);
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new ArrayValidator(
             1,
             3
         );
+        $this->assertInstanceOf(ArrayValidator::class, $validator);
     }
 
-    public function testCreateFromObjectTypeless()
+    public function testCreateFromObjectTypeless(): void
     {
         $validator = IntegerValidator::createFromObject((object)[]);
 
         $this->assertInstanceOf(IntegerValidator::class, $validator);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testCreateFromObjectTypelessFailure()
+    public function testCreateFromObjectTypelessFailure(): void
     {
-        $validator = BaseValidator::createFromObject((object)[]);
+        $this->expectException(\Exception::class);
+        BaseValidator::createFromObject((object)[]);
     }
 
     /**
      * Validate against common enum keyword
      */
-    public function testValidateCommon()
+    public function testValidateCommon(): void
     {
         (new IntegerValidator())->parse(5);
 
@@ -374,7 +358,7 @@ class BaseValidatorTest extends TestCase
     /**
      * Validate against common enum keyword
      */
-    public function testValidateEnum()
+    public function testValidateEnum(): void
     {
         $validator = (new IntegerValidator(0, 10));
 
@@ -405,14 +389,14 @@ class BaseValidatorTest extends TestCase
 
         $parsed = $validator->parse('111');
 
-        $this->assertInternalType('integer', $parsed);
+        $this->assertIsInt($parsed);
         $this->assertSame(111, $parsed);
     }
 
     /**
      * Validate against common enum keyword
      */
-    public function testValidateEnumArray()
+    public function testValidateEnumArray(): void
     {
         $validator = (new ArrayValidator())
             ->setEnum([[1], [2, 12]]);
@@ -420,13 +404,9 @@ class BaseValidatorTest extends TestCase
         $this->assertEquals([2, 12], $validator->parse([12, 2]));
     }
 
-    /**
-     * Validate against common enum keyword,
-     * expect exception since objects and arrays are not yet supported for enum keyword
-     * @expectedException \Exception
-     */
-    public function testValidateEnumException2()
+    public function testValidateEnumException2(): void
     {
+        $this->expectException(\Exception::class);
         $validator = (new IntegerValidator(0, 10));
 
         $validator->enum = [[1], new \stdClass(), 5];
@@ -434,11 +414,9 @@ class BaseValidatorTest extends TestCase
         $validator->validate(2);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testValidateEnumException3()
+    public function testValidateEnumException3(): void
     {
+        $this->expectException(\Exception::class);
         $validator = (new ObjectValidator());
 
         $validator->enum = new \stdClass();
@@ -449,7 +427,7 @@ class BaseValidatorTest extends TestCase
     /**
      * Validate against common not keyword
      */
-    public function testValidateNot()
+    public function testValidateNot(): void
     {
         $validator = new StringValidator();
 
@@ -478,12 +456,9 @@ class BaseValidatorTest extends TestCase
         $this->assertFalse($return->status);
     }
 
-    /**
-     * Validate against common not keyword
-     * @expectedException \Exception
-     */
-    public function testValidateNotFailure()
+    public function testValidateNotFailure(): void
     {
+        $this->expectException(\Exception::class);
         $validator = new IntegerValidator();
 
         $validator->not = new \stdClass();
@@ -491,19 +466,17 @@ class BaseValidatorTest extends TestCase
         $validator->parse(1);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testParseFailure3()
+    public function testParseFailure3(): void
     {
+        $this->expectException(\Exception::class);
         $input = '87';
 
         $validationModel = new IntegerValidator(0, 6);
 
-        $cleanInput = $validationModel->parse($input);
+        $validationModel->parse($input);
     }
 
-    public function testGet()
+    public function testGet(): void
     {
         $validator = new IntegerValidator();
 
@@ -514,41 +487,37 @@ class BaseValidatorTest extends TestCase
         $this->assertEquals(0, $validator->__get('default'));
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testGet2()
+    public function testGet2(): void
     {
+        $this->expectException(\Exception::class);
         $validator = new IntegerValidator();
         $validator->IM_SURE_THIS_CANT_BE_FOUND;
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testSetFailure()
+    public function testSetFailure(): void
     {
+        $this->expectException(\Exception::class);
         $validator = new IntegerValidator();
         $validator->IM_SURE_THIS_CANT_BE_FOUND = 'value';
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $validator = new IntegerValidator();
         $this->assertEquals('integer', $validator->getType());
     }
 
-    public function testGetTypeAttributes()
+    public function testGetTypeAttributes(): void
     {
         $validator = new IntegerValidator();
-        $this->assertInternalType('array', $validator->getTypeAttributes());
+        $this->assertIsArray($validator->getTypeAttributes());
 
         foreach ($validator->getTypeAttributes() as $attribute) {
-            $this->assertInternalType('string', $attribute);
+            $this->assertIsString($attribute);
         }
     }
 
-    public function testSetSuccess()
+    public function testSetSuccess(): void
     {
         $validator = new IntegerValidator();
         $validator->title = 'my title';
@@ -566,7 +535,7 @@ class BaseValidatorTest extends TestCase
         );
     }
 
-    public function testSetTitle()
+    public function testSetTitle(): void
     {
         $validator = new IntegerValidator();
         $validator->setTitle('my title');
@@ -576,7 +545,7 @@ class BaseValidatorTest extends TestCase
         );
     }
 
-    public function testSetDescription()
+    public function testSetDescription(): void
     {
         $validator = new IntegerValidator();
         $validator->setDescription('my description');
@@ -586,7 +555,7 @@ class BaseValidatorTest extends TestCase
         );
     }
 
-    public function testSetDefault()
+    public function testSetDefault(): void
     {
         $validator = new IntegerValidator();
         $validator->setDefault(222);
@@ -597,24 +566,22 @@ class BaseValidatorTest extends TestCase
         );
     }
 
-    public function testSetNot()
+    public function testSetNot(): void
     {
         $validator = new IntegerValidator();
 
         $validator->setNot(new EnumValidator([0, 2]));
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testSetNotFailure()
+    public function testSetNotFailure(): void
     {
+        $this->expectException(\Exception::class);
         $validator = new IntegerValidator();
 
         $validator->setNot([0, 1]);
     }
 
-    public function testSetEnum()
+    public function testSetEnum(): void
     {
         $validator = new IntegerValidator();
 
@@ -640,7 +607,7 @@ class BaseValidatorTest extends TestCase
         );
     }
 
-    public function testCreateFromArray()
+    public function testCreateFromArray(): void
     {
         $schema = [
             'type' => 'integer',
@@ -656,18 +623,15 @@ class BaseValidatorTest extends TestCase
         $this->assertSame(2, $validator->maximum);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testCreateFromObjectForAdditionalFailureNull()
+    public function testCreateFromObjectForAdditionalFailureNull(): void
     {
-        $object = (object)[
-        ];
+        $this->expectException(\Exception::class);
+        $object = (object)[];
 
         BaseValidator::createFromObject($object);
     }
 
-    public function testCreateFromObject()
+    public function testCreateFromObject(): void
     {
         $schema = (object)[
             'type' => 'integer',
@@ -698,11 +662,9 @@ class BaseValidatorTest extends TestCase
         $validator->parse((object)['code' => 10]);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testCreateFromObjectFailure()
+    public function testCreateFromObjectFailure(): void
     {
+        $this->expectException(\Exception::class);
         $object = (object)[
             'type' => 'x-not-found'
         ];
@@ -710,26 +672,24 @@ class BaseValidatorTest extends TestCase
         $validator = BaseValidator::createFromObject($object);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testCreateFromObjectFailureNotObject()
+    public function testCreateFromObjectFailureNotObject(): void
     {
+        $this->expectException(\Exception::class);
         BaseValidator::createFromObject('string');
     }
 
-    public function testToObject()
+    public function testToObject(): void
     {
         $return = $this->int->toObject();
 
-        $this->assertInternalType('object', $return);
+        $this->assertIsObject($return);
 
-        $this->assertObjectHasAttribute('type', $return);
-        $this->assertObjectHasAttribute('minimum', $return);
-        $this->assertObjectHasAttribute('maximum', $return);
+        $this->assertObjectHasProperty('type', $return);
+        $this->assertObjectHasProperty('minimum', $return);
+        $this->assertObjectHasProperty('maximum', $return);
     }
 
-    public function testToObjec2()
+    public function testToObjec2(): void
     {
         $return = (new ObjectValidator(
             [
@@ -738,27 +698,27 @@ class BaseValidatorTest extends TestCase
             ['int']
         ))->toObject();
 
-        $this->assertInternalType('object', $return);
+        $this->assertIsObject($return);
 
-        $this->assertObjectHasAttribute('type', $return);
-        $this->assertObjectHasAttribute('properties', $return);
-        $this->assertObjectHasAttribute('required', $return);
+        $this->assertObjectHasProperty('type', $return);
+        $this->assertObjectHasProperty('properties', $return);
+        $this->assertObjectHasProperty('required', $return);
 
-        $this->assertInternalType('object', $return->properties);
+        $this->assertIsObject($return->properties);
     }
 
-    public function testToArray()
+    public function testToArray(): void
     {
         $return = $this->int->toArray();
 
-        $this->assertInternalType('array', $return);
+        $this->assertIsArray($return);
 
         $this->assertArrayHasKey('type', $return);
         $this->assertArrayHasKey('minimum', $return);
         $this->assertArrayHasKey('maximum', $return);
     }
 
-    public function testToArray2()
+    public function testToArray2(): void
     {
         $return = (new ObjectValidator(
             [
@@ -769,32 +729,32 @@ class BaseValidatorTest extends TestCase
             ['int']
         ))->toArray();
 
-        $this->assertInternalType('array', $return);
+        $this->assertIsArray($return);
 
         $this->assertArrayHasKey('type', $return);
         $this->assertArrayHasKey('properties', $return);
         $this->assertArrayHasKey('required', $return);
 
-        $this->assertInternalType('array', $return['properties']);
+        $this->assertIsArray($return['properties']);
     }
 
-    public function testToJSON()
+    public function testToJSON(): void
     {
         $json = $this->int->toJSON();
 
-        $this->assertInternalType('string', $json);
+        $this->assertIsString($json);
 
         $jsonObject = json_decode($json);
 
         //assert no errors
         $this->assertSame(JSON_ERROR_NONE, json_last_error());
 
-        $this->assertObjectHasAttribute('type', $jsonObject);
-        $this->assertObjectHasAttribute('minimum', $jsonObject);
-        $this->assertObjectHasAttribute('maximum', $jsonObject);
+        $this->assertObjectHasProperty('type', $jsonObject);
+        $this->assertObjectHasProperty('minimum', $jsonObject);
+        $this->assertObjectHasProperty('maximum', $jsonObject);
     }
 
-    public function testToJSON2()
+    public function testToJSON2(): void
     {
         $validator = new ObjectValidator(
             [
@@ -805,19 +765,19 @@ class BaseValidatorTest extends TestCase
 
         $json = $validator->toJSON();
 
-        $this->assertInternalType('string', $json);
+        $this->assertIsString($json);
 
         $jsonObject = json_decode($json);
 
         //assert no errors
         $this->assertSame(JSON_ERROR_NONE, json_last_error());
 
-        $this->assertObjectHasAttribute('type', $jsonObject);
-        $this->assertObjectHasAttribute('properties', $jsonObject);
+        $this->assertObjectHasProperty('type', $jsonObject);
+        $this->assertObjectHasProperty('properties', $jsonObject);
 
-        $this->assertInternalType('object', $jsonObject->properties);
+        $this->assertIsObject($jsonObject->properties);
 
-        $this->assertObjectHasAttribute('int', $jsonObject->properties);
+        $this->assertObjectHasProperty('int', $jsonObject->properties);
 
         $validator = new ArrayValidator(
             0,
@@ -827,7 +787,7 @@ class BaseValidatorTest extends TestCase
 
         $json = $validator->toJSON();
 
-        $this->assertInternalType('string', $json);
+        $this->assertIsString($json);
 
         $jsonObject = json_decode($json);
 
@@ -835,7 +795,7 @@ class BaseValidatorTest extends TestCase
         $this->assertSame(JSON_ERROR_NONE, json_last_error());
     }
 
-    public function testRegisterValidator()
+    public function testRegisterValidator(): void
     {
         BaseValidator::registerValidator(
             \Phramework\Validate\APP\AddressValidator::getType(),
@@ -864,44 +824,38 @@ class BaseValidatorTest extends TestCase
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testRegisterValidatorFailure()
+    public function testRegisterValidatorFailure(): void
     {
+        $this->expectException(\Exception::class);
         BaseValidator::registerValidator(
             \Phramework\Validate\APP\AddressValidator::getType(),
             \stdClass::class
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testRegisterValidatorFailure2()
+    public function testRegisterValidatorFailure2(): void
     {
+        $this->expectException(\Exception::class);
         BaseValidator::registerValidator(
             5,
             \Phramework\Validate\APP\AddressValidator::class
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testRegisterValidatorFailure3()
+    public function testRegisterValidatorFailure3(): void
     {
+        $this->expectException(\Exception::class);
         BaseValidator::registerValidator(
             \Phramework\Validate\APP\AddressValidator::getType(),
             34
         );
     }
-    public function testRunValidateCallback()
+    public function testRunValidateCallback(): void
     {
-        (new IntegerValidator())->parse(5);
+        $this->assertSame(5, (new IntegerValidator())->parse(5));
     }
 
-    public function testSetValidateCallback()
+    public function testSetValidateCallback(): void
     {
         $value = 5;
 
@@ -915,31 +869,28 @@ class BaseValidatorTest extends TestCase
                 function ($validateResult, $validator) {
                     $validateResult->value = $validateResult->value + 1;
 
-                return $validateResult;
-            });
+                    return $validateResult;
+                }
+            );
 
         $this->assertInstanceOf(IntegerValidator::class, $validator);
 
         $parsed = $validator->parse($value);
 
-        $this->assertInternalType('integer', $parsed);
+        $this->assertIsInt($parsed);
         $this->assertSame($value + 1, $parsed);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testSetValidateFailure1()
+    public function testSetValidateFailure1(): void
     {
+        $this->expectException(\Exception::class);
         $validator = (new IntegerValidator())
             ->setValidateCallback('pokemon');
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testRunValidateCallbackFailure()
+    public function testRunValidateCallbackFailure(): void
     {
+        $this->expectException(\Exception::class);
         $validator = (new IntegerValidator())
             ->setValidateCallback(function ($validateResult, $validator) {
                 $validateResult->status = false;

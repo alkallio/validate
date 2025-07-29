@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -28,74 +29,67 @@ class IntegerValidatorTest extends TestCase
      * Tears down the fixture, for example, closes a network connection.
      * This method is called after a test is executed.
      */
-    protected function tearDown(): void
-    {
-    }
+    protected function tearDown(): void {}
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider(): array
     {
         //input, expected
         return [
-            ['100', 100],
-            [124, 124],
-            [0, 0],
-            [-10, -10],
-            [-99, -99]
+            'string "100"' => ['100', 100],
+            'integer 124' => [124, 124],
+            'integer 0' => [0, 0],
+            'integer -10' => [-10, -10],
+            'integer -99' => [-99, -99]
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider(): array
     {
         //input
         return [
-            ['-0x'],
-            ['abc'],
-            ['+xyz'],
-            ['++30'],
-            [-1000], //should fail becaus of exclusiveMinimum
-            [-10000000],
-            [10000000],
-            ['-1000000000'],
-            [1.4],
-            [-13.5]
+            'hex string' => ['-0x'],
+            'alpha string' => ['abc'],
+            'plus string' => ['+xyz'],
+            'double plus string' => ['++30'],
+            'exclusive minimum' => [-1000], //should fail because of exclusiveMinimum
+            'out of bounds minimum' => [-10000000],
+            'out of bounds maximum' => [10000000],
+            'out of bounds string' => ['-1000000000'],
+            'float value' => [1.4],
+            'negative float value' => [-13.5]
         ];
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new IntegerValidator(
             0,
             1
         );
+        $this->assertInstanceOf(IntegerValidator::class, $validator);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure()
+    public function testConstructFailure(): void
     {
-        $validator = new IntegerValidator(
+        $this->expectException(\Exception::class);
+        new IntegerValidator(
             'a'
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure2()
+    public function testConstructFailure2(): void
     {
-        $validator = new IntegerValidator(
+        $this->expectException(\Exception::class);
+        new IntegerValidator(
             1,
             'a'
         );
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure3()
+    public function testConstructFailure3(): void
     {
-        $validator = new IntegerValidator(
+        $this->expectException(\Exception::class);
+        new IntegerValidator(
             1,
             2,
             null,
@@ -104,10 +98,8 @@ class IntegerValidatorTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testCreateFromJSON($input, $expected)
+    #[DataProvider('validateSuccessProvider')]
+    public function testCreateFromJSON(string|int $input, int $expected): void
     {
         $json = '{
             "type": "integer",
@@ -132,7 +124,7 @@ class IntegerValidatorTest extends TestCase
             'Default must be passed'
         );
 
-        $this->assertObjectNotHasAttribute(
+        $this->assertObjectNotHasProperty(
             'x-extra',
             $validatorObject,
             'Attribute must not exists'
@@ -145,38 +137,30 @@ class IntegerValidatorTest extends TestCase
     /**
      * Helper method
      */
-    private function validateSuccess(IntegerValidator $object, $input, $expected)
+    private function validateSuccess(IntegerValidator $object, string|int $input, int $expected): void
     {
         $return = $object->validate($input);
 
         $this->assertTrue($return->status);
-        $this->assertInternalType('integer', $return->value);
+        $this->assertIsInt($return->value);
         $this->assertSame($expected, $return->value);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input, $expected)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess(string|int $input, int $expected): void
     {
         $this->validateSuccess($this->object, $input, $expected);
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure(mixed $input): void
     {
         $return = $this->object->validate($input);
 
         $this->assertFalse($return->status);
-
-        $this->markTestIncomplete(
-            'Test Exclusive'
-        );
     }
 
-    public function testValidateFailureMultipleOf()
+    public function testValidateFailureMultipleOf(): void
     {
         $validator = new IntegerValidator(null, null, null, null, 2);
         $return = $validator->validate(5);
@@ -191,7 +175,7 @@ class IntegerValidatorTest extends TestCase
     /**
      * Validate against common enum keyword
      */
-    public function testValidateCommon()
+    public function testValidateCommon(): void
     {
         $validator = (new IntegerValidator(0, 10));
 
@@ -210,7 +194,7 @@ class IntegerValidatorTest extends TestCase
         );
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertEquals('integer', $this->object->getType());
     }

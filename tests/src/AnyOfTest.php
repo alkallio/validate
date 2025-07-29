@@ -2,6 +2,7 @@
 
 namespace Phramework\Validate;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class AnyOfTest extends TestCase
@@ -36,7 +37,7 @@ class AnyOfTest extends TestCase
     {
     }
 
-    public function validateSuccessProvider()
+    public static function validateSuccessProvider()
     {
         //input, expected
         return [
@@ -48,7 +49,7 @@ class AnyOfTest extends TestCase
         ];
     }
 
-    public function validateFailureProvider()
+    public static function validateFailureProvider()
     {
         //input
         return [
@@ -66,7 +67,7 @@ class AnyOfTest extends TestCase
         ];
     }
 
-    public function testConstruct()
+    public function testConstruct(): void
     {
         $validator = new AnyOf([
             new StringValidator(),
@@ -76,39 +77,34 @@ class AnyOfTest extends TestCase
                 new StringValidator()
             )
         ]);
+        $this->assertInstanceOf(AnyOf::class, $validator);
     }
 
-    /**
-     * @expectedException \Exception
-     */
-    public function testConstructFailure()
+    public function testConstructFailure(): void
     {
-        $validator = new AnyOf(['{"type": "integer"}']);
+        $this->expectException(\Exception::class);
+        new AnyOf(['{"type": "integer"}']);
     }
 
-    /**
-     * @dataProvider validateSuccessProvider
-     */
-    public function testValidateSuccess($input, $expected)
+    #[DataProvider('validateSuccessProvider')]
+    public function testValidateSuccess($input, $expected): void
     {
         $return = $this->object->validate($input);
 
         $this->assertTrue($return->status);
 
         if (is_array($return->value)) {
-            $this->assertInternalType('array', $return->value);
-
             foreach ($return->value as $values) {
-                $this->assertInternalType('integer', $values);
+                $this->assertIsInt($values);
             }
         } else {
-            $this->assertInternalType('integer', $return->value);
+            $this->assertIsInt($return->value);
         }
 
         $this->assertEquals($expected, $return->value);
     }
 
-    public function testValidateSuccessFailureTypes()
+    public function testValidateSuccessFailureTypes(): void
     {
         //any
 
@@ -150,17 +146,15 @@ class AnyOfTest extends TestCase
         $this->assertEquals('oneOf', $parameters[0]['failure']);
     }
 
-    /**
-     * @dataProvider validateFailureProvider
-     */
-    public function testValidateFailure($input = null)
+    #[DataProvider('validateFailureProvider')]
+    public function testValidateFailure($input = null): void
     {
         $return = $this->object->validate($input);
 
-        $this->assertEquals(false, $return->status);
+        $this->assertFalse($return->status);
     }
 
-    public function testCreateFromObject()
+    public function testCreateFromObject(): void
     {
         $object = (object)json_decode('{
           "anyOf": [
@@ -179,10 +173,9 @@ class AnyOfTest extends TestCase
         $validator = BaseValidator::createFromObject($object);
 
         $this->assertInstanceOf(AnyOf::class, $validator);
-
-        $this->assertInternalType('array', $validator->anyOf);
+        $this->assertIsArray($validator->anyOf);
     }
-    public function testCreateFromObjectForAdditional()
+    public function testCreateFromJSON(): void
     {
         $json = '{
           "anyOf": [
@@ -201,27 +194,26 @@ class AnyOfTest extends TestCase
         $validator = BaseValidator::createFromJSON($json);
 
         $this->assertInstanceOf(AnyOf::class, $validator);
+        $this->assertIsArray($validator->anyOf);
 
-        $this->assertInternalType('array', $validator->anyOf);
+        //Test success
+        $return = $validator->validate(10);
+        $this->assertTrue($return->status);
+        $this->assertSame(10, $return->value);
 
-        //Set validator
-        $this->object = $validator;
+        $return = $validator->validate([10, 20]);
+        $this->assertTrue($return->status);
+        $this->assertEquals([10, 20], $return->value);
 
-        $this->testValidateSuccess(10, 10);
-        $this->testValidateSuccess([10, 20], [10, 20]);
-
-        $this->testValidateFailure(10.5);
-        $this->testValidateFailure('null');
-
-        $this->setUp();
-
-        return $validator;
+        //Test failure
+        $this->assertFalse($validator->validate(10.5)->status);
+        $this->assertFalse($validator->validate('null')->status);
     }
 
     /**
      * Validate against common enum keyword
      */
-    public function testValidateCommon()
+    public function testValidateCommon(): void
     {
         $validator = $this->object;
 
@@ -252,7 +244,7 @@ class AnyOfTest extends TestCase
         );
     }
 
-    public function testGetType()
+    public function testGetType(): void
     {
         $this->assertSame(null, $this->object->getType());
     }
