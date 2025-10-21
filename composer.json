@@ -6,9 +6,9 @@
   "type": "library",
   "authors": [
     {
-    "name": "Xenofon Spafaridis",
-    "email": "nohponex@gmail.com",
-    "homepage": "https://nohponex.gr"
+      "name": "Xenofon Spafaridis",
+      "email": "nohponex@gmail.com",
+      "homepage": "https://nohponex.gr"
     },
     {
       "name": "Alex Kalliontzis",
@@ -26,7 +26,7 @@
     }
   },
   "require": {
-    "php": "^7.1 || ^8.0",
+    "php": "^8.2",
     "ext-json": "*",
     "phramework/exceptions": "0.*"
   },
@@ -38,7 +38,9 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "archive": {
-    "exclude": ["tests"]
+    "exclude": [
+      "tests"
+    ]
   },
   "scripts": {
     "test": [
